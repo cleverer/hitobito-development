@@ -19,9 +19,9 @@ jobs:
   # See also https://docs.docker.com/docker-hub/builds/
   push:
     runs-on: ubuntu-latest
-  strategy:
-    matrix:
-      image: [rails, mailcatcher]
+    strategy:
+      matrix:
+        image: [rails, mailcatcher]
 
     steps:
       - uses: actions/checkout@v2
