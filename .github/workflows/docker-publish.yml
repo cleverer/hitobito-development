@@ -14,14 +14,12 @@ on:
   schedule:
     - cron: "7 23 * * *"
 
-env:
-  # TODO: Change variable to your image's name.
-  RAILS_IMAGE_NAME: rails
-  MAILCATCHER_IMAGE_NAME: mailcatcher
-
 jobs:
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
+  strategy:
+    matrix:
+      image_name: [rails, mailcatcher]
   push:
     runs-on: ubuntu-latest
 
@@ -30,20 +28,17 @@ jobs:
 
       - name: Build images
         run: |
-          docker build . --file docker/Rails.dockerfile --tag $RAILS_IMAGE_NAME
-          docker build . --file docker/Mailcatcher.dockerfile --tag $MAILCATCHER_IMAGE_NAME
+          docker build . --file docker/${{ matrix.image }}.dockerfile --tag ${{ matrix.image }}
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push images
         run: |
-          RAILS_IMAGE_ID=ghcr.io/${{ github.repository }}/$RAILS_IMAGE_NAME
-          MAILCATCHER_IMAGE_ID=ghcr.io/${{ github.repository }}/$MAILCATCHER_IMAGE_NAME
+          IMAGE_ID=ghcr.io/${{ github.repository }}/${{ matrix.image }}
           
           # Change all uppercase to lowercase
-          RAILS_IMAGE_ID=$(echo $RAILS_IMAGE_ID | tr '[A-Z]' '[a-z]')
-          MAILCATCHER_IMAGE_ID=$(echo $MAILCATCHER_IMAGE_ID | tr '[A-Z]' '[a-z]')
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
 
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
@@ -54,11 +49,8 @@ jobs:
           # Use Docker `latest` tag convention
           [ "$VERSION" == "master" ] && VERSION=latest
 
-          echo RAILS_IMAGE_ID=$RAILS_IMAGE_ID
-          echo MAILCATCHER_IMAGE_ID=$MAILCATCHER_IMAGE_ID
+          echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
-          docker tag $RAILS_IMAGE_NAME $RAILS_IMAGE_ID:$VERSION
-          docker tag $MAILCATCHER_IMAGE_NAME $MAILCATCHER_IMAGE_ID:$VERSION
-          docker push $RAILS_IMAGE_ID:$VERSION
-          docker push $MAILCATCHER_IMAGE_ID:$VERSION
+          docker tag ${{ matrix.image }} $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
