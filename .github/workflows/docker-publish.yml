@@ -1,0 +1,64 @@
+name: Docker
+
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Automatically rebuild latest tag
+  schedule:
+    - cron: "7 23 * * *"
+
+env:
+  # TODO: Change variable to your image's name.
+  HITOBITO_IMAGE_NAME: hitobito
+  MAILCATCHER_IMAGE_NAME: mailcatcher
+
+jobs:
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build images
+        run: |
+          docker build .compose --file .docker/Rails.dockerfile --target app --tag $HITOBITO_IMAGE_NAME
+          docker build .compose --file .docker/Mailcatcher.dockerfile --tag $MAILCATCHER_IMAGE_NAME
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push images
+        run: |
+          APP_IMAGE_ID=ghcr.io/${{ github.repository }}/$HITOBITO_IMAGE_NAME
+          WORKER_IMAGE_ID=ghcr.io/${{ github.repository }}/$MAILCATCHER_IMAGE_NAME
+          
+          # Change all uppercase to lowercase
+          APP_IMAGE_ID=$(echo $APP_IMAGE_ID | tr '[A-Z]' '[a-z]')
+          WORKER_IMAGE_ID=$(echo $WORKER_IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
+
+          echo APP_IMAGE_ID=$APP_IMAGE_ID
+          echo WORKER_IMAGE_ID=$WORKER_IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag $HITOBITO_IMAGE_NAME $APP_IMAGE_ID:$VERSION
+          docker tag $MAILCATCHER_IMAGE_NAME $WORKER_IMAGE_ID:$VERSION
+          docker push $APP_IMAGE_ID:$VERSION
+          docker push $WORKER_IMAGE_ID:$VERSION

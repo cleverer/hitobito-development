@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/Rails.dockerfile
-    image: hitobito-dev/rails
+    image: ghcr.io/hitobito/development/rails
     user: "${UID:-1000}"
     tty: true
     stdin_open: true
@@ -39,7 +39,7 @@ services:
 
   # Dependencies
   mailcatcher:
-    image: hitobito-dev/mailcatcher
+    image: ghcr.io/hitobito/development/mailcatcher
     build:
       context: .
       dockerfile: ./docker/Mailcatcher.dockerfile
@@ -76,7 +76,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/Rails.dockerfile
-    image: hitobito-dev/rails
+    image: ghcr.io/hitobito/development/rails
     entrypoint: [ "webpack-entrypoint" ]
     env_file: docker/rails.env
     environment:
