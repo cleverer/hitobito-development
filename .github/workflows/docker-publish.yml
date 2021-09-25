@@ -17,11 +17,11 @@ on:
 jobs:
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
-  strategy:
-    matrix:
-      image_name: [rails, mailcatcher]
   push:
     runs-on: ubuntu-latest
+  strategy:
+    matrix:
+      image: [rails, mailcatcher]
 
     steps:
       - uses: actions/checkout@v2
