@@ -30,8 +30,8 @@ jobs:
 
       - name: Build images
         run: |
-          docker build . --file .docker/Rails.dockerfile --tag $RAILS_IMAGE_NAME
-          docker build . --file .docker/Mailcatcher.dockerfile --tag $MAILCATCHER_IMAGE_NAME
+          docker build . --file docker/Rails.dockerfile --tag $RAILS_IMAGE_NAME
+          docker build . --file docker/Mailcatcher.dockerfile --tag $MAILCATCHER_IMAGE_NAME
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
